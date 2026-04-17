@@ -40,4 +40,4 @@ It collects data from sensors (if connected).
 Sends data to backend server using HTTP POST/GET.
 Backend processes and stores the data.
 Frontend fetches data from backend API.
-Website displays data in real-time.
+Website displays data in real-time.# speechConverter

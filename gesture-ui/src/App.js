@@ -10,7 +10,7 @@ function App() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      fetch("http://localhost:5000/gesture")
+      fetch("https://speechconverter.onrender.com/gesture")
         .then(res => res.json())
         .then(data => {
 

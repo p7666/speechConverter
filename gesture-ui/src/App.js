@@ -6,62 +6,62 @@ function App() {
   const [status, setStatus] = useState("Connecting...");
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [lastSpoken, setLastSpoken] = useState("");
-  const [lastSpokenTime, setLastSpokenTime] = useState(0); // ✅ NEW
+  const [lastSpokenTime, setLastSpokenTime] = useState(0);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetch("https://speechconverter.onrender.com/gesture")
-        .then(res => res.json())
-        .then(data => {
+  // ✅ Fetch function (clean + reusable)
+  const fetchData = () => {
+    fetch("https://speechconverter.onrender.com/gesture") // ✅ FIXED URL
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.gesture !== null) {
+          setStatus("Connected");
+          setGesture(data.gesture);
 
-          if (data.lastUpdated && Date.now() - data.lastUpdated < 10000) {
-            setStatus("Connected");
-            setGesture(data.gesture);
-
-            // ✅ Update history
-            setHistory(prev => {
-              if (prev[0] !== data.gesture) {
-                return [data.gesture, ...prev.slice(0, 4)];
-              }
-              return prev;
-            });
-
-            // ✅ HANDLE REPEATED GESTURES WITH DELAY
-            const now = Date.now();
-
-            if (
-              audioEnabled &&
-              data.gesture &&
-              data.gesture !== "None" &&
-              (data.gesture !== lastSpoken || now - lastSpokenTime > 3000)
-            ) {
-              speak(data.gesture);
-              setLastSpoken(data.gesture);
-              setLastSpokenTime(now);
+          // ✅ Update history (avoid duplicates)
+          setHistory((prev) => {
+            if (prev[0] !== data.gesture) {
+              return [data.gesture, ...prev.slice(0, 4)];
             }
+            return prev;
+          });
 
-          } else {
-            setStatus("Connect to WiFi"); // ✅ UPDATED TEXT
-            setGesture("None");
+          const now = Date.now();
+
+          // ✅ Speech control with delay
+          if (
+            audioEnabled &&
+            data.gesture &&
+            data.gesture !== "None" &&
+            (data.gesture !== lastSpoken ||
+              now - lastSpokenTime > 3000)
+          ) {
+            speak(data.gesture);
+            setLastSpoken(data.gesture);
+            setLastSpokenTime(now);
           }
+        } else {
+          setStatus("Connect to WiFi");
+          setGesture("None");
+        }
+      })
+      .catch(() => {
+        setStatus("Disconnected");
+        setGesture("No Server");
+      });
+  };
 
-        })
-        .catch(() => {
-          setStatus("Disconnected");
-          setGesture("No Server");
-        });
-    }, 2000);
-
+  // ✅ Run polling only once
+  useEffect(() => {
+    const interval = setInterval(fetchData, 2000);
     return () => clearInterval(interval);
-  }, [lastSpoken, lastSpokenTime, audioEnabled]);
+  }, []);
 
   // ✅ SPEECH FUNCTION
   const speak = (text) => {
     if (!text || text === "None") return;
 
     const synth = window.speechSynthesis;
-
-    synth.cancel(); // stop previous speech
+    synth.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
 
@@ -82,7 +82,9 @@ function App() {
 
       {/* Title */}
       <div className="text-center mb-4">
-        <h1 className="display-5 fw-bold">Gesture Recognition System</h1>
+        <h1 className="display-5 fw-bold">
+          Gesture Recognition System
+        </h1>
 
         {/* Enable Voice */}
         <button
@@ -90,7 +92,6 @@ function App() {
           onClick={() => {
             setAudioEnabled(true);
 
-            // 🔊 Enable speech
             const test = new SpeechSynthesisUtterance("Voice enabled");
             window.speechSynthesis.speak(test);
           }}
@@ -101,13 +102,15 @@ function App() {
 
       {/* Status */}
       <div className="text-center mb-4">
-        <span className={`badge px-4 py-2 fs-6 ${
-          status === "Connected"
-            ? "bg-success"
-            : status === "Connect to WiFi"
-            ? "bg-warning text-dark"
-            : "bg-danger"
-        }`}>
+        <span
+          className={`badge px-4 py-2 fs-6 ${
+            status === "Connected"
+              ? "bg-success"
+              : status === "Connect to WiFi"
+              ? "bg-warning text-dark"
+              : "bg-danger"
+          }`}
+        >
           {status}
         </span>
       </div>
@@ -133,7 +136,9 @@ function App() {
               <h5 className="card-title">Recent Gestures</h5>
               <ul className="list-group">
                 {history.length === 0 ? (
-                  <li className="list-group-item">No gestures yet</li>
+                  <li className="list-group-item">
+                    No gestures yet
+                  </li>
                 ) : (
                   history.map((g, index) => (
                     <li key={index} className="list-group-item">
@@ -152,3 +157,4 @@ function App() {
 }
 
 export default App;
+
